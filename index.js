@@ -180,10 +180,16 @@ CaseSensitivePathsPlugin.prototype.apply = function(compiler) {
     });
   };
 
+  const cleanupPath = (resourcePath) => {
+      // Trim ? off, since some loaders add that to the resource they're attemping to load
+      return resourcePath.split('?')[0]
+        // replace escaped \0# with # see: https://github.com/webpack/enhanced-resolve#escaping
+        .replace(/\u0000#/, '#');
+  }
+
   const onAfterResolve = (data, done) => {
     this.primeCache(() => {
-      // Trim ? off, since some loaders add that to the resource they're attemping to load
-      let pathName = (data.createData || data).resource.split('?')[0];
+      let pathName = cleanupPath((data.createData || data).resource);
       pathName = pathName.normalize ? pathName.normalize('NFC') : pathName;
 
       checkFile(pathName, data, done);
