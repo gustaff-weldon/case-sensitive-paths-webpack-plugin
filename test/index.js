@@ -115,6 +115,18 @@ describe('CaseSensitivePathsPlugin', () => {
     });
   }
 
+  it('should handle paths with # correctly', (done) => {
+    const compiler = webpackCompilerAtDir('name-with-hash');
+
+    // if not done properly an exception will be thrown: Uncaught TypeError [ERR_INVALID_ARG_VALUE]: The argument 'path' must be a string or Uint8Array without null bytes
+    return compiler.run((err, stats) => {
+      if (err) done(err);
+      assert.strictEqual(stats.hasErrors(), false);
+      assert.strictEqual(stats.hasWarnings(), false);
+      done();
+    });
+  });
+
   // For future reference: This test is somewhat of a race condition, these values seem to work well.
   // If this test fails, sometimes just re-running will make it succeed.
   it('should handle the deletion of a folder', (done) => {
