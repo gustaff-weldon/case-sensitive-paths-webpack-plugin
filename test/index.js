@@ -115,6 +115,22 @@ describe('CaseSensitivePathsPlugin', () => {
     });
   }
 
+  it('should handle paths with # correctly', (done) => {
+    const compiler = webpackCompilerAtDir('name-with-hash');
+
+    return compiler.run((err, stats) => {
+      if (err) done(err);
+      assert.strictEqual(stats.hasErrors(), false);
+      assert.strictEqual(stats.hasWarnings(), false);
+      const jsonStats = stats.toJson();
+
+      // check that the plugin produces the correct output
+      assert.strictEqual(jsonStats.modules[1].name, './#/foo.js');
+
+      done();
+    });
+  });
+
   // For future reference: This test is somewhat of a race condition, these values seem to work well.
   // If this test fails, sometimes just re-running will make it succeed.
   it('should handle the deletion of a folder', (done) => {
