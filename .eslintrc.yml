@@ -2,13 +2,10 @@ extends: airbnb-base
 plugins:
   - import
 
-parserOptions:
-  ecmaVersion: 2015
-
 env:
   node: true
   browser: false
-  es6: false
+  es6: true
 
 rules:
   no-console: off

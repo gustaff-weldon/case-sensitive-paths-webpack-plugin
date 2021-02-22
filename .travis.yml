@@ -10,6 +10,7 @@ os:
   - osx
 
 env:
+  - WEBPACK_VERSION=4
   - WEBPACK_VERSION=latest
   - WEBPACK_VERSION=next
 

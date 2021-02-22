@@ -6,7 +6,7 @@ const CaseSensitivePathsPlugin = require('../index.js'); // use inside the npm p
 
 module.exports = function(config) {
   config.set({
-    browsers: ['PhantomJS', 'Chrome'],
+    browsers: ['Firefox'],
     singleRun: true,
     frameworks: ['jasmine'],
     files: [
@@ -14,13 +14,13 @@ module.exports = function(config) {
       'tests.webpack.js'
     ],
     preprocessors: {
-      'tests.webpack.js': ['webpack', 'sourcemap']
+      'tests.webpack.js': ['webpack']
     },
     webpack: {
-      devtool: 'inline-sourcemap',
+      devtool: 'source-map',
       resolve: wpc.resolve, // get from main webpack config
       module: {
-        loaders: wpc.module.loaders, // get from main webpack config
+        rules: wpc.module.rules, // get from main webpack config
       },
       watch: true,
       plugins: [

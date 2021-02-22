@@ -11,26 +11,24 @@ const path = require('path');
 const webpack = require('webpack');
 const webpackPkg = require('webpack/package.json');
 
-const CaseSensitivePathsPlugin = require('../');
+const CaseSensitivePathsPlugin = require('..');
 
 function webpackCompilerAtDir(dir, otherOpts, useBeforeEmitHook) {
-  const opts = Object.assign(
-    {
-      context: path.join(__dirname, 'fixtures', dir),
-      entry: './entry',
-      mode: 'development',
-      output: {
-        path: path.join(__dirname, 'js'),
-        filename: 'result.js',
-      },
-      plugins: [
-        new CaseSensitivePathsPlugin({
-          useBeforeEmitHook: useBeforeEmitHook,
-        }),
-      ],
+  const opts = {
+    context: path.join(__dirname, 'fixtures', dir),
+    entry: './entry',
+    mode: 'development',
+    output: {
+      path: path.join(__dirname, 'js'),
+      filename: 'result.js',
     },
-    otherOpts,
-  );
+    plugins: [
+      new CaseSensitivePathsPlugin({
+        useBeforeEmitHook: useBeforeEmitHook,
+      }),
+    ],
+    ...otherOpts,
+  };
 
   if (webpackPkg.version[0] === '4') {
     opts.mode = 'development';
@@ -132,7 +130,6 @@ describe('CaseSensitivePathsPlugin', () => {
   it('should handle the deletion of a folder', (done) => {
     const compiler = webpackCompilerAtDir('deleting-folder', {
       cache: false,
-      watch: true,
     });
 
     // create folder and file to be deleted
@@ -144,12 +141,18 @@ describe('CaseSensitivePathsPlugin', () => {
     );
     const testFile = path.join(testFolder, 'testfile.js');
     if (!fs.existsSync(testFolder)) fs.mkdirSync(testFolder);
-    if (!fs.existsSync(testFile))
-      fs.writeFileSync(testFile, "module.exports = '';");
+    if (!fs.existsSync(testFile)) fs.writeFileSync(testFile, "module.exports = '';");
 
+    // Count how many webpack runs have happened. Should only ever get up to 2.
     let watchCount = 0;
+    // Set to true to exit the watch loop
     let resolved = false;
+
     let jsonStats;
+
+    // Prevent test timeouts from keeping the test run from exiting due to still-running watcher
+    setTimeout(() => { resolved = true; }, 4000);
+
     const watcher = compiler.watch(
       { poll: 500, aggregateTimeout: 500 },
       (err, stats) => {
@@ -172,7 +175,7 @@ describe('CaseSensitivePathsPlugin', () => {
             // after initial compile delete test folder
             fs.unlinkSync(testFile);
             fs.rmdirSync(testFolder);
-          }, 500);
+          }, 250);
         } else if (stats.hasErrors()) {
           assert(!stats.hasWarnings());
 
@@ -182,11 +185,12 @@ describe('CaseSensitivePathsPlugin', () => {
           resolved = true;
           watcher.close(done);
         } else {
-          done(
+          resolved = true;
+          watcher.close(done(
             Error(
               'Did not detect error when folder was deleted. Try rerunning the test.',
             ),
-          );
+          ));
         }
       },
     );
@@ -217,8 +221,8 @@ describe('CaseSensitivePathsPlugin', () => {
 
         assert(stats.hasErrors());
         assert(
-          error.indexOf('Cannot resolve') !== -1 ||
-            error.indexOf("Can't resolve") !== -1,
+          error.indexOf('Cannot resolve') !== -1
+            || error.indexOf("Can't resolve") !== -1,
         );
         assert(!stats.hasWarnings());
 
@@ -261,7 +265,7 @@ describe('CaseSensitivePathsPlugin', () => {
               const onCompile = () => {
                 readdir = readdir || compiler.inputFileSystem.readdir;
                 // eslint-disable-next-line no-param-reassign
-                compiler.inputFileSystem.readdir = function(p, cb) {
+                compiler.inputFileSystem.readdir = function (p, cb) {
                   called = true;
                   fs.readdir(p, cb);
                 };

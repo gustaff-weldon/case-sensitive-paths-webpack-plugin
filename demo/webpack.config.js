@@ -3,11 +3,6 @@ var path = require('path');
 var HtmlWebpackPlugin = require('html-webpack-plugin');
 var CaseSensitivePathsPlugin = require('../index.js'); // use inside the npm package
 
-// We use the NODE_ENV in our automation commands to differentiate environments
-var production =
-  process.env.NODE_ENV === 'production' ||
-  process.env.NODE_ENV === 'preprod';
-
 // Setup our plugins.
 var plugins = [
   // attaches the webpack-generated JS to our main HTML file
@@ -16,40 +11,12 @@ var plugins = [
   new webpack.DefinePlugin({
     __ENV__: JSON.stringify(process.env.NODE_ENV)
   }),
-  // http://gaearon.github.io/react-hot-loader/getstarted/
-  new webpack.HotModuleReplacementPlugin(),
   // Mac doesn't care about case, but linux servers do, so enforce...
   new CaseSensitivePathsPlugin()
 ];
 
-// In production we do a bit more...
-if (production) {
-  plugins.concat(
-    [
-      new webpack.optimize.DedupePlugin(),
-      new webpack.optimize.OccurenceOrderPlugin(),
-      new webpack.optimize.UglifyJsPlugin({
-        compress: {
-          warnings: false
-        }
-      })
-    ]);
-}
-
-const devEntry = [
-    'webpack-dev-server/client?http://0.0.0.0:3000', // tells client where to get hot reloads
-    'webpack/hot/only-dev-server', // "only" prevents reload on syntax errors
-    'babel-polyfill', // for full ES6 compatibility on older devices
-    './src/init.js'
-  ];
-const prodEntry = [
-    'babel-polyfill', // for full ES6 compatibility on older devices
-    './src/init.js'
-];
-
-const theEntry = (production) ? prodEntry : devEntry;
-
 module.exports = {
+  mode: 'development',
 
   // Bundle to our dist folder as a main.js file.
   output: {
@@ -58,26 +25,29 @@ module.exports = {
     publicPath: '/'
   },
 
-  devtool: 'sourcemap',
+  devtool: 'source-map',
 
   // Our master entry point.
-  entry: theEntry,
-
-  // Extra helpers to make require or include easier.
-  resolve: {
-    extensions: ['', '.js', '.jsx', '.json']
-  },
+  entry: [
+      'webpack-dev-server/client?http://0.0.0.0:3000', // tells client where to get hot reloads
+      'webpack/hot/only-dev-server', // "only" prevents reload on syntax errors
+      'babel-polyfill', // for full ES6 compatibility on older devices
+      './src/init.js'
+    ],
 
   module: {
-    loaders: [{
+    rules: [{
       test: /\.(js|jsx)$/,
-      // in dev only, hotload
-      loader: production ? 'babel' : 'react-hot!babel',
-      // other babel options are specified in .babelrc
+      use: {
+        loader: 'babel-loader',
+        options: {
+          presets: ['@babel/preset-env', '@babel/preset-react']
+        }
+      },
       exclude: /node_modules/
     }, {
       test: /\.json$/,
-      loader: 'json'
+      use: 'json'
     }]
   },
 
